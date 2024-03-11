@@ -1,0 +1,26 @@
+{
+  "name": "helloworld",
+  "version": "1.0.0",
+  "description": "hello world app",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maya-edstrom/helloworld.git"
+  },
+  "keywords": [
+    "node",
+    "express"
+  ],
+  "author": "Maya Edstrom",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/maya-edstrom/helloworld/issues"
+  },
+  "homepage": "https://github.com/maya-edstrom/helloworld#readme",
+  "dependencies": {
+    "express": "^4.18.3"
+  }
+}
