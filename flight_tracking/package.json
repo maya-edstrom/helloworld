@@ -2,9 +2,10 @@
   "name": "flight_tracking",
   "version": "1.0.0",
   "description": "Flight tracking project for GEOG 576  ",
-  "main": "server.js",
+  "main": "server/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start":"nodemon ../server/server.js"
   },
   "keywords": [
     "aws",
