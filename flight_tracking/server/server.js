@@ -43,7 +43,7 @@ app.get('/flights', async (request, response) => {
 app.get('/flights/:airport_code', async (request, response) => {
 
   scriptName = "server.js: /flights/:airport_code(): "
-  console.log("in " + scriptName + " ...")p
+  console.log("in " + scriptName + " ...")
   try {
 
         var my_airport_code = request.params.airport_code
