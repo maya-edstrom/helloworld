@@ -1,10 +1,16 @@
-// Name:          app.js
-
-// Description:   GEOG 576. Lab 6, Part 2: Display flights in a table. 
-
-// Author:        Randy Sincoular
+// Name:            app.js
+//
+// Description:     GEOG 576 Part 3.  Use flight tracking API to display aircraft locations
+//
+// Author:          Bucky Badger
 
 console.log("app.js()  starting app.js() ... ")
+
+// ------------------------------------
+// Elastic IP Address of EC2 Instance
+// ------------------------------------
+ec2ServerURL = 'http://44.219.84.233/'
+
 
 // Get lat/lng from local storage variables
 console.log("app.js() localStorage (lat): " + localStorage.getItem('latitude'))
@@ -12,14 +18,6 @@ console.log("app.js() localStorage (lng):" + localStorage.getItem('longitude'))
 
 var myLatitude = localStorage.getItem('latitude')
 var myLongitude = localStorage.getItem('longitude')
-
-// Default Airport Code
-defaultAirportCode = "MSN"
-
-// ---------------------------------------------------
-// URL of Elastic IP Address for EC2 Server + PORT #
-// ---------------------------------------------------
-serverURL = "http://44.219.84.233:8000"
 
 // Verify location variables have values.  If not, set default lat/lon values
 if (myLatitude == null || myLongitude == null) {
@@ -37,7 +35,65 @@ console.log("app.js() myLat/Lng: " + myLatitude + " " + myLongitude)
 
 const tableBody = document.getElementById('table_body')
 
-// Get Flights from Express Server and Flight Tracking API
+
+// Default Airport Code
+// const defaultAirportCode = process.env.defaultAirportCode
+defaultAirportCode = "MSN"
+
+console.log("mapping.js: checking flightURL ...")
+
+// Add Flight data to Map
+
+async function showFlights() {
+
+
+    try {
+        const flightURL = ec2ServerURL + ':8000/flights/' + '&arr_iata=' + defaultAirportCode
+        scriptName = "mapping.js: showFlights(): "
+        console.log("in "+ scriptName)
+        console.log("  **flightURL: " + flightURL)
+
+        const response = await fetch(flightURL)
+        const json = await response.json()
+
+        console.log(scriptName + " data: " + json)
+
+        var delim = ","
+
+        var planeIcon = L.icon({
+            iconUrl: 'icons8-plane-24.png',
+        
+            iconSize:     [24, 24], // size of the icon
+            shadowSize:   [26, 26], // size of the shadow
+            iconAnchor:   [22, 22], // point of the icon which will correspond to marker's location
+            popupAnchor:  [-3, -24] // point from which the popup should open relative to the iconAnchor
+        });
+        
+            for (let i = 0; i < json.response.length;i++) {
+    
+                // Put marker on map
+                console.log("adding marker to map. LatLng: " + json.response[i].lat,json.response[i].lng)
+
+                // const marker = L.marker([json.response[i].lat,json.response[i].lng]).addTo(map)
+                const marker = L.marker([json.response[i].lat,json.response[i].lng],{icon:planeIcon}).addTo(map)
+
+                console.log(json.response[i].reg_number + delim + json.response[i].alt + delim  +
+                json.response[i].dir + delim + json.response[i].speed + delim + json.response[i].lat +
+                delim + json.response[i].lng + delim + json.response[i].dep_iata + delim + json.response[i].flight_icao + delim + json.response[i].status)
+
+                }  // end for
+
+
+    } catch (error) {
+        console.error("Error fetching flightURL: " + flightURL + " Error: " + error.stack) 
+    }
+
+}  // end showFlights()
+
+// ----------------------------------
+// Get Flights for Specified Airport
+// ----------------------------------
+
 const getFlights = async function (airportCode)  {
 
     try {
@@ -49,28 +105,30 @@ const getFlights = async function (airportCode)  {
         // Can be set by user on subsequent passes
 
         console.log("app.js()  in getFlights() airportCode: " + airportCode)
-
         if (typeof airportCode == 'undefined') {
             console.log("app.js()  in getFlights() setting airportCode to default value")
             
-            // Set a Default Airport Code
             airportCode = 'MSN'
         }
 
         console.log("app.js: in getFlights() ...airport code: " + airportCode)
 
-        // Use Elastic IP Address to Access 'flights' route
-        var api_url = serverURL + '/flights/' + `${airportCode}`
+        // ----------------------------------------------------
+        // Need to use Elastic IP Address of EC2 Instance Here
+        // ----------------------------------------------------
+       const api_url = ec2ServerURL + ':8000/flights/' + `${airportCode}`
        
         console.log("app.js: getFlights() api_url: " + api_url)
        
-        // Fetch the flights
+        // Call API to get current flights for selected airport
+
         const response = await fetch(api_url);   
 
         // Wait for response from flight API
         const json = await response.json();
 
         console.log("** app.js: getFlights() " + json);
+        console.log(json)
 
         console.log("app.js: getFlights() length: " + json.response.length)
 
@@ -80,6 +138,9 @@ const getFlights = async function (airportCode)  {
 
         // Populate the Flight Table with Active Flights
         populateFlightTable(json)
+
+        // Create a Text File and Load Into Postgres
+        // createCSVAndLoad(json)
   
     } // end try
     catch (error) {
@@ -100,9 +161,9 @@ const getNearbyAirports = async function ()  {
 
         // Make sure to use backticks when defining the route parameter
         console.log("app.js:  getNearbyAirports() calling flights api ...")
-
-        console.log("app1.js: serverURL: " + serverURL)
-        const api_url = serverURL + '/nearbyAirports/' + `${myLatitude},${myLongitude}`
+        
+        // Need to use the Elastic IP Address
+        const api_url = ec2ServerURL + `:8000/nearbyAirports/` + `${myLatitude},${myLongitude}`
 
         console.log("app.js: getNearbyAirports() api_url: " + api_url)
        
@@ -140,9 +201,15 @@ const getNearbyAirports = async function ()  {
 
 }  // end getNearByAirport()
 
-// ------------------------
-// Find the Nearby Airport
-// ------------------------
+
+// --------------------
+// Show Flights on Map
+// --------------------
+console.log("--------------------------")
+console.log("app.js:  calling: getFlights() ...")
+showFlights()
+
+
 console.log("app.js: calling: getNearbyAirports() ....")
 getNearbyAirports()
 
@@ -179,10 +246,12 @@ const populateFlightTable = (json) => {
 
             else {
            
-            // Loop through the response and Display Flight Attributes
-
+            // Loop through the response
             for (let i = 0; i < json.response.length;i++) {
-                    
+
+                // Display Flight Attributes in a SPAN Element
+                // document.getElementById('aircraft').textContent = json.response[i].reg_number
+    
                 console.log("reg_number: " + json.response[i].reg_number + " altitude: " + json.response[i].alt)
 
                 // --------------
@@ -230,6 +299,7 @@ const populateFlightTable = (json) => {
                     tableCell.append(json.response[i].lng)
                     tableRow.append(tableCell)
 
+
                     tableBody.append(tableRow)
     
             }  // end for
@@ -246,6 +316,7 @@ console.log("app.js() calling: getNearbyAirportResults ...")
 const getNearbyAirportResults = (json) => {
 
     try {
+
    
         console.log("app.js() in getNearbyAirportResults ...")
 
@@ -285,7 +356,7 @@ const getNearbyAirportResults = (json) => {
     // Display the Nearby Airport on page
     x.innerHTML = "<br />" + "Nearby Airport: " + airportName + " (" + airportIataCode + ")"
  
-}  // end try
+}
 catch {
     alert("Error getting nearby airport data")
     console.error("Error getting nearby airport data")
@@ -299,6 +370,6 @@ catch {
     // Display the Nearby Airport on page
     x.innerHTML= "Nearby Airport: " + airportName + " (" + airportIataCode + ")"
 
-} // end catch()
+}
 
 } // end getNearbyAirportResults
